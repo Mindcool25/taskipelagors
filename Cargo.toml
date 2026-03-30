@@ -1,0 +1,11 @@
+[package]
+name = "taskipelagors"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+archipelago_rs = "2.1.0"
+clap = "4.6.0"
+futures = "0.3.32"
+serde = { version = "1.0.228", features = ["derive"] }
+termcolor = "1.4.1"
