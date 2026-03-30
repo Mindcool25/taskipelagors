@@ -1,7 +1,7 @@
 use std::{error::Error, io::{self, Write}};
 use archipelago_rs::{self as ap};
 use serde::{Serialize, Deserialize};
-use termcolor::{self, StandardStream, WriteColor};
+use termcolor::{self, WriteColor};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SlotData {
@@ -81,6 +81,4 @@ fn main() -> Result<(), Box<dyn Error>> {
 			)?;
 		}
 	}
-
-	Ok(())
 }
