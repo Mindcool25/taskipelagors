@@ -1,5 +1,6 @@
 use std::{error::Error, io::{self, Write}};
 use archipelago_rs::{self as ap};
+use clap::Parser;
 use serde::{Serialize, Deserialize};
 use termcolor::{self, WriteColor};
 
@@ -22,6 +23,12 @@ struct SlotData {
 	sent_player_names: Vec<String>,
 }
 
+#[derive(Parser)]
+struct CLIOptions {
+	url: Option<String>,
+	name: Option<String>,
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut header_color: termcolor::ColorSpec = termcolor::ColorSpec::new();
 	header_color.set_fg(Some(termcolor::Color::Green)).set_bold(true);
@@ -34,15 +41,29 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 	let stdin = io::stdin();
 
-	let mut url = String::new();
-	write!(&mut stdout, "AP URL: ")?;
-	stdout.flush()?;
-	stdin.read_line(&mut url)?;
+	let opts = CLIOptions::parse();
 
-	let mut name = String::new();
-	write!(&mut stdout, "Slot: ")?;
-	stdout.flush()?;
-	stdin.read_line(&mut name)?;
+	let url = match opts.url {
+		Some(s) => s,
+		None => {
+			let mut url = String::new();
+			write!(&mut stdout, "AP URL: ")?;
+			stdout.flush()?;
+			stdin.read_line(&mut url)?;
+			url
+		}
+	};
+
+	let name = match opts.name {
+		Some(s) => s,
+		None => {
+			let mut name = String::new();
+			write!(&mut stdout, "Slot: ")?;
+			stdout.flush()?;
+			stdin.read_line(&mut name)?;
+			name
+		}
+	};
 
 	writeln!(&mut stdout, "Connecting to {url} with name {name}")?;
 
