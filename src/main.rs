@@ -36,6 +36,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut checkbox_color = termcolor::ColorSpec::new();
 	checkbox_color.set_fg(Some(termcolor::Color::Magenta)).set_bold(true);
 
+	let mut error_color = termcolor::ColorSpec::new();
+	error_color.set_fg(Some(termcolor::Color::Red)).set_bold(false);
+
 	let mut stdout = termcolor::StandardStream::stdout(termcolor::ColorChoice::Auto);
 	stdout.set_color(&header_color)?;
 	writeln!(&mut stdout, "Welcome to the Taskipelago Alternate Client")?;
@@ -68,7 +71,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 		}
 	};
 
-	writeln!(&mut stdout, "Connecting to {url} with name {name}")?;
+	writeln!(&mut stdout, "Connecting to {} with name {}", url.trim(), name.trim())?;
 
 	let mut client: ap::Client<SlotData> = futures::executor::block_on(
 		ap::Client::connect(
@@ -85,28 +88,42 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 	let mut command = String::new();
 
-	loop {
-		stdout.set_color(&header_color)?;
-		writeln!(&mut stdout, "Your tasks:")?;
+	writeln!(&mut stdout, "Your tasks:")?;
+	for (idx, task) in client.slot_data().tasks.iter().enumerate() {
+		let checked = client.is_local_location_checked(client.slot_data().base_complete_location_id + idx as i64);
+		stdout.set_color(&checkbox_color)?;
+		write!(&mut stdout, "[{}]", if checked { 'x' } else { ' ' })?;
 		stdout.reset()?;
-		for (idx, task) in client.slot_data().tasks.iter().enumerate() {
-			let checked = client.is_local_location_checked(client.slot_data().base_complete_location_id + idx as i64);
-			stdout.set_color(&checkbox_color)?;
-			write!(&mut stdout, "[{}]", if checked { 'x' } else { ' ' })?;
-			stdout.reset()?;
-			writeln!(&mut stdout, "{idx:4}. {task}")?;
-		}
+		writeln!(&mut stdout, "{:4}. {task}", idx + 1)?;
+	}
+
+	loop {
+		command.clear();
+		stdout.set_color(&header_color)?;
 
 		write!(&mut stdout, "Check which one? ")?;
+		stdout.reset()?;
 		stdout.flush()?;
 		stdin.read_line(&mut command)?;
 		if let Ok(c) = command.trim().parse::<i64>() {
+			let idx = (c - 1) as usize;
+			if idx >= client.slot_data().tasks.len() {
+				stdout.set_color(&error_color)?;
+				writeln!(&mut stdout, "Out of range")?;
+				stdout.reset()?;
+				continue;
+			}
 			client.mark_checked(
 				[
-					client.slot_data().base_reward_location_id + c,
-					client.slot_data().base_complete_location_id + c,
+					client.slot_data().base_reward_location_id + c - 1,
+					client.slot_data().base_complete_location_id + c - 1,
 				]
 			)?;
+			writeln!(&mut stdout, "Sent {} to {}", client.slot_data().sent_item_names[idx], client.slot_data().sent_player_names[idx])?;
+		} else {
+			stdout.set_color(&error_color)?;
+			writeln!(&mut stdout, "Please give me a number")?;
+			stdout.reset()?;
 		}
 	}
 }
