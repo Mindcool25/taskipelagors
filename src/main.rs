@@ -33,6 +33,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut header_color: termcolor::ColorSpec = termcolor::ColorSpec::new();
 	header_color.set_fg(Some(termcolor::Color::Green)).set_bold(true);
 
+	let mut checkbox_color = termcolor::ColorSpec::new();
+	checkbox_color.set_fg(Some(termcolor::Color::Magenta)).set_bold(true);
+
 	let mut stdout = termcolor::StandardStream::stdout(termcolor::ColorChoice::Auto);
 	stdout.set_color(&header_color)?;
 	writeln!(&mut stdout, "Welcome to the Taskipelago Alternate Client")?;
@@ -72,7 +75,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			url.trim(),
 			name.trim(),
 			Some("Taskipelago"),
-			ap::ConnectionOptions::new().receive_items(ap::ItemHandling::None)
+			ap::ConnectionOptions::new().receive_items(ap::ItemHandling::OtherWorlds { own_world: true, starting_inventory: true })
 		)
 	)?;
 
@@ -87,6 +90,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 		writeln!(&mut stdout, "Your tasks:")?;
 		stdout.reset()?;
 		for (idx, task) in client.slot_data().tasks.iter().enumerate() {
+			let checked = client.is_local_location_checked(client.slot_data().base_complete_location_id + idx as i64);
+			stdout.set_color(&checkbox_color)?;
+			write!(&mut stdout, "[{}]", if checked { 'x' } else { ' ' })?;
+			stdout.reset()?;
 			writeln!(&mut stdout, "{idx:4}. {task}")?;
 		}
 
